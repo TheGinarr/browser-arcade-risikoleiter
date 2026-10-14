@@ -20,16 +20,16 @@
 
 import { lade, speichere } from "./storage.js";
 
-let ctx = null;          // AudioContext – erst bei Bedarf erzeugen
-let master = null;       // zentrale Lautstärke
+let ctx = null; // AudioContext – erst bei Bedarf erzeugen
+let master = null; // zentrale Lautstärke
 
 function kontext() {
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return null;                  // sehr alte Browser: stumm
+    if (!AC) return null; // sehr alte Browser: stumm
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = 0.22;              // insgesamt dezent bleiben
+    master.gain.value = 0.22; // insgesamt dezent bleiben
     master.connect(ctx.destination);
   }
   if (ctx.state === "suspended") ctx.resume();
@@ -119,10 +119,16 @@ export function klangFastGewinn() {
  * desto länger und höher das Arpeggio – wie am echten Gerät.
  */
 export function klangGewinn(stufe = 0) {
-  const toene = [262, 330, 392, 523, 659, 784, 1047, 1319];  // C-Dur aufwärts
+  const toene = [262, 330, 392, 523, 659, 784, 1047, 1319]; // C-Dur aufwärts
   const anzahl = [3, 5, 8, 12][Math.max(0, Math.min(3, stufe))];
   for (let i = 0; i < anzahl; i++) {
-    ton(toene[i % toene.length] * (1 + Math.floor(i / toene.length)), 0.14, "square", 0.3, i * 0.09);
+    ton(
+      toene[i % toene.length] * (1 + Math.floor(i / toene.length)),
+      0.14,
+      "square",
+      0.3,
+      i * 0.09,
+    );
   }
 }
 
@@ -171,7 +177,11 @@ export function tonKnopf(container) {
     knopf.setAttribute("aria-pressed", String(istTonAn()));
     knopf.setAttribute("aria-label", istTonAn() ? "Ton ausschalten" : "Ton einschalten");
   };
-  knopf.addEventListener("click", () => { tonUmschalten(); anzeigen(); if (istTonAn()) klangWalzenStopp(1); });
+  knopf.addEventListener("click", () => {
+    tonUmschalten();
+    anzeigen();
+    if (istTonAn()) klangWalzenStopp(1);
+  });
   anzeigen();
   container.append(knopf);
   return knopf;

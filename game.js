@@ -40,16 +40,22 @@
 import { toplisteAnzeigen, stillEintragen } from "./assets/ui.js";
 import { lade, speichere, entferne } from "./assets/storage.js";
 import {
-  STARTGELD, kontostand, einsatzAbbuchen, rundeAbschliessen,
-  istPleite, pleiteNeustart, walletHud, walletHudAktualisieren,
+  STARTGELD,
+  kontostand,
+  einsatzAbbuchen,
+  rundeAbschliessen,
+  istPleite,
+  pleiteNeustart,
+  walletHud,
+  walletHudAktualisieren,
 } from "./assets/wallet.js";
 import { tonKnopf } from "./assets/klang.js";
 import { leiterBauen, leiterTabelle, risikoZiehen, RISIKO_FAKTOREN } from "./assets/risiko.js";
 
-const SPIEL = "risikoleiter";                   // Schlüssel für storage.js (Topliste und gewählter Einsatz)
-const CHIPS = [10, 25, 50, 100];                // erlaubte Einsätze
-const MINDESTEINSATZ = CHIPS[0];                // darunter ist man pleite
-const NACH_RUNDE_SPERRE_MS = 700;               // so lange nach dem Ende startet keine neue Runde (Leertaste-Spammer-Schutz)
+const SPIEL = "risikoleiter"; // Schlüssel für storage.js (Topliste und gewählter Einsatz)
+const CHIPS = [10, 25, 50, 100]; // erlaubte Einsätze
+const MINDESTEINSATZ = CHIPS[0]; // darunter ist man pleite
+const NACH_RUNDE_SPERRE_MS = 700; // so lange nach dem Ende startet keine neue Runde (Leertaste-Spammer-Schutz)
 
 /* ============================================================
    TEIL 1: REINE LOGIK (ohne DOM, in Node testbar)
@@ -79,9 +85,16 @@ export function endMeldung(einsatz, ergebnis) {
     return { text: `Absturz! Dein Einsatz von ${geld(einsatz)} ist weg.`, art: "falsch" };
   }
   if (ergebnis.grund === "oben") {
-    return { text: `Ganz oben! ${geld(ergebnis.betrag)} gesammelt, Netto +${geld(netto)}. Das schaffen nur 3,1 % der Aufsteiger.`, art: "richtig" };
+    return {
+      text: `Ganz oben! ${geld(ergebnis.betrag)} gesammelt, Netto +${geld(netto)}. Das schaffen nur 3,1 % der Aufsteiger.`,
+      art: "richtig",
+    };
   }
-  if (netto === 0) return { text: `Gesammelt: ${geld(ergebnis.betrag)}, dein Einsatz zurück (Netto ±0).`, art: "neutral" };
+  if (netto === 0)
+    return {
+      text: `Gesammelt: ${geld(ergebnis.betrag)}, dein Einsatz zurück (Netto ±0).`,
+      art: "neutral",
+    };
   return { text: `Gesammelt: ${geld(ergebnis.betrag)}, Netto +${geld(netto)}.`, art: "richtig" };
 }
 
@@ -104,7 +117,10 @@ export function simulieren(zielStufe, runden, zufall = Math.random) {
   }
   const geschafft = runden - verloren;
   return {
-    runden, verloren, geschafft, ziel,
+    runden,
+    verloren,
+    geschafft,
+    ziel,
     durchschnitt: runden > 0 ? summe / runden : 0,
     anteilVerloren: runden > 0 ? verloren / runden : 0,
     anteilGeschafft: runden > 0 ? geschafft / runden : 0,
@@ -130,11 +146,11 @@ function starteSpiel() {
   const kopfElement = document.querySelector(".spiel-kopf");
 
   // ----- Spielzustand -----
-  let phase = "bereit";                // "bereit" (Einsatz wählen) | "aufstieg" (Leiter läuft)
-  let einsatz = ladeEinsatz();         // gewählter Chip
-  let runde = null;                    // { einsatz, sicher, abgerechnet } während einer Runde; sicher = aktuell SICHERER Betrag
-  let leiter = null;                   // die Leiter-Komponente aus risiko.js
-  let sperreBis = 0;                   // vor diesem Zeitpunkt (performance.now) startet keine neue Runde
+  let phase = "bereit"; // "bereit" (Einsatz wählen) | "aufstieg" (Leiter läuft)
+  let einsatz = ladeEinsatz(); // gewählter Chip
+  let runde = null; // { einsatz, sicher, abgerechnet } während einer Runde; sicher = aktuell SICHERER Betrag
+  let leiter = null; // die Leiter-Komponente aus risiko.js
+  let sperreBis = 0; // vor diesem Zeitpunkt (performance.now) startet keine neue Runde
 
   const zahlText = (n) => n.toLocaleString("de-DE");
 
@@ -195,7 +211,7 @@ function starteSpiel() {
       gewinnElement.textContent = `+${zahlText(netto)}`;
       gewinnElement.classList.add("plus");
     } else if (netto < 0) {
-      gewinnElement.textContent = `−${zahlText(-netto)}`;        // echtes Minuszeichen (U+2212)
+      gewinnElement.textContent = `−${zahlText(-netto)}`; // echtes Minuszeichen (U+2212)
       gewinnElement.classList.add("minus");
     } else {
       gewinnElement.textContent = "±0";
@@ -221,7 +237,11 @@ function starteSpiel() {
   /** Vor dem Start: die Leiter mit den Beträgen des gewählten Einsatzes, nur zum Anschauen. */
   function vorschauZeigen() {
     runde = null;
-    const vorschau = leiterBauen({ betrag: einsatz, maxBetrag: maxBetragFuer(einsatz), vorschau: true });
+    const vorschau = leiterBauen({
+      betrag: einsatz,
+      maxBetrag: maxBetragFuer(einsatz),
+      vorschau: true,
+    });
     halter.replaceChildren(vorschau.element);
     betragElement.textContent = "–";
     betragElement.classList.remove("verloren");
@@ -257,8 +277,8 @@ function starteSpiel() {
       return;
     }
     phase = "aufstieg";
-    runde = { einsatz, sicher: einsatz, abgerechnet: false };    // der Einsatz ist die unterste Stufe: sofort im Spiel
-    walletHudAktualisieren();                                      // der Einsatz verlässt sichtbar das Konto
+    runde = { einsatz, sicher: einsatz, abgerechnet: false }; // der Einsatz ist die unterste Stufe: sofort im Spiel
+    walletHudAktualisieren(); // der Einsatz verlässt sichtbar das Konto
     gewinnSetzen(null);
     steuerungAktualisieren();
     betragAnzeigen(einsatz, einsatz);
@@ -269,9 +289,12 @@ function starteSpiel() {
       betrag: einsatz,
       maxBetrag: maxBetragFuer(einsatz),
       // SOFORT nach jeder Ziehung: so viel ist jetzt sicher (auch mitten in der Blink-Animation).
-      beiAenderung: (sicher) => { if (runde) runde.sicher = sicher; },
+      beiAenderung: (sicher) => {
+        if (runde) runde.sicher = sicher;
+      },
       // Wenn die Animation gelandet ist: Anzeige links nachziehen.
-      beiErgebnis: ({ art, betrag }) => betragAnzeigen(betrag, runde ? runde.einsatz : einsatz, art === "ab"),
+      beiErgebnis: ({ art, betrag }) =>
+        betragAnzeigen(betrag, runde ? runde.einsatz : einsatz, art === "ab"),
     });
     halter.replaceChildren(leiter.element);
     leiter.ende.then(rundeBeenden);
@@ -353,16 +376,16 @@ function starteSpiel() {
   }
 
   document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;    // Browser-Kürzel nicht stören, Dauerdruck ignorieren
-    if (document.querySelector("dialog[open]")) return;            // Dialog offen -> Tasten gehören ihm
+    if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return; // Browser-Kürzel nicht stören, Dauerdruck ignorieren
+    if (document.querySelector("dialog[open]")) return; // Dialog offen -> Tasten gehören ihm
     const tag = e.target instanceof Element ? e.target.tagName : "";
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-    if (phase !== "bereit") return;                                // auf der Leiter hören die Tasten dem Modul (Leertaste, S)
+    if (phase !== "bereit") return; // auf der Leiter hören die Tasten dem Modul (Leertaste, S)
 
     if (e.key === " ") {
       // Auf einem fokussierten Knopf/Link/Aufklapper macht die Leertaste schon etwas (anklicken): nicht doppelt auslösen.
       if (tag === "BUTTON" || tag === "A" || tag === "SUMMARY") return;
-      e.preventDefault();                                          // Seite nicht scrollen
+      e.preventDefault(); // Seite nicht scrollen
       aufsteigen();
     } else if (/^[1-9]$/.test(e.key) && Number(e.key) <= CHIPS.length) {
       einsatzWaehlen(CHIPS[Number(e.key) - 1]);
@@ -380,7 +403,7 @@ function starteSpiel() {
 
   // ----- Start -----
   walletHud(document.getElementById("wallet-hud"));
-  tonKnopf(kopfElement);                                           // Ton an/aus, gilt für alle Casino-Spiele
+  tonKnopf(kopfElement); // Ton an/aus, gilt für alle Casino-Spiele
   einsatzAnpassen();
   steuerungAktualisieren();
   vorschauZeigen();
@@ -416,13 +439,18 @@ function tabelleFuellen() {
   const koerper = document.getElementById("leiter-tabelle");
   // Einsatz = 1: Alle Beträge sind direkt die Vielfachen (x1 ... x32).
   for (const zeile of leiterTabelle(1)) {
-    koerper.append(zeileBauen([
-      zeile.stufe === 0 ? "Sofort sammeln (x1)" : `Bis x${zeile.faktor} klettern`,
-      prozent(zeile.chance),
-      prozent(zeile.verlust),
-      `${zeile.erwartung.toLocaleString("de-DE", { maximumFractionDigits: 2 })} × Einsatz`,
-      `${zeile.streuung.toLocaleString("de-DE", { maximumFractionDigits: 2 })} × Einsatz`,
-    ], zeile.stufe === RISIKO_FAKTOREN.length - 1));
+    koerper.append(
+      zeileBauen(
+        [
+          zeile.stufe === 0 ? "Sofort sammeln (x1)" : `Bis x${zeile.faktor} klettern`,
+          prozent(zeile.chance),
+          prozent(zeile.verlust),
+          `${zeile.erwartung.toLocaleString("de-DE", { maximumFractionDigits: 2 })} × Einsatz`,
+          `${zeile.streuung.toLocaleString("de-DE", { maximumFractionDigits: 2 })} × Einsatz`,
+        ],
+        zeile.stufe === RISIKO_FAKTOREN.length - 1,
+      ),
+    );
   }
 }
 
@@ -432,7 +460,7 @@ function simulationAufbauen() {
   const knopf = document.getElementById("sim-start");
   const ausgabe = document.getElementById("sim-ergebnis");
   RISIKO_FAKTOREN.forEach((faktor, i) => {
-    if (i === 0) return;                                            // x1 wäre sofort sammeln: nichts zu simulieren
+    if (i === 0) return; // x1 wäre sofort sammeln: nichts zu simulieren
     const option = document.createElement("option");
     option.value = String(i);
     option.textContent = `x${faktor}`;
@@ -444,11 +472,19 @@ function simulationAufbauen() {
     const e = simulieren(stufe, 10000);
     ausgabe.replaceChildren();
     const zeile1 = document.createElement("span");
-    zeile1.append("Von 10.000 Aufsteigern mit dem Ziel ", Object.assign(document.createElement("strong"), { textContent: `x${e.ziel}` }),
-      ` verloren ${e.verloren.toLocaleString("de-DE")} alles (${prozent(e.anteilVerloren)}), nur ${e.geschafft.toLocaleString("de-DE")} kamen an (${prozent(e.anteilGeschafft)}). `);
+    zeile1.append(
+      "Von 10.000 Aufsteigern mit dem Ziel ",
+      Object.assign(document.createElement("strong"), { textContent: `x${e.ziel}` }),
+      ` verloren ${e.verloren.toLocaleString("de-DE")} alles (${prozent(e.anteilVerloren)}), nur ${e.geschafft.toLocaleString("de-DE")} kamen an (${prozent(e.anteilGeschafft)}). `,
+    );
     const zeile2 = document.createElement("span");
-    zeile2.append("Im Durchschnitt hat jeder ", Object.assign(document.createElement("strong"), { textContent: `${e.durchschnitt.toLocaleString("de-DE", { maximumFractionDigits: 2 })} × Einsatz` }),
-      " zurückbekommen. Fair gerechnet wäre es genau 1.");
+    zeile2.append(
+      "Im Durchschnitt hat jeder ",
+      Object.assign(document.createElement("strong"), {
+        textContent: `${e.durchschnitt.toLocaleString("de-DE", { maximumFractionDigits: 2 })} × Einsatz`,
+      }),
+      " zurückbekommen. Fair gerechnet wäre es genau 1.",
+    );
     ausgabe.append(zeile1, zeile2);
   });
 }

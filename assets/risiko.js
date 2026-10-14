@@ -74,9 +74,9 @@ export const RISIKO_TIMEOUT_MS = 20000;
 /** Gewinnchance jedes einzelnen Risiko-Schritts: genau 50 %. */
 export const RISIKO_CHANCE = 0.5;
 
-const BLINK_MS = 230;               // Takt des Flackerns (Stufe und Null wechseln sich so schnell ab)
-const SPERRE_MS = 400;              // so lange sind die riskanten Knöpfe nach dem Erscheinen gesperrt
-const FADE_MS = 180;                // Ausblenden des Overlays
+const BLINK_MS = 230; // Takt des Flackerns (Stufe und Null wechseln sich so schnell ab)
+const SPERRE_MS = 400; // so lange sind die riskanten Knöpfe nach dem Erscheinen gesperrt
+const FADE_MS = 180; // Ausblenden des Overlays
 
 /**
  * Die Stufen der Leiter für einen Startbetrag: betrag x 1, x2, x4 ... x32,
@@ -144,7 +144,7 @@ const WERT_NAMEN = { B: "Bube", D: "Dame", K: "König", A: "Ass" };
  * Rückgabe: { index, farbe, symbol, symbolName, wert, name }
  */
 export function kartenZiehen(zufall = Math.random) {
-  const index = Math.min(51, Math.floor(zufall() * 52));    // min(): falls ein Test-Zufall genau 1 liefert
+  const index = Math.min(51, Math.floor(zufall() * 52)); // min(): falls ein Test-Zufall genau 1 liefert
   const symbol = KARTEN_SYMBOLE[Math.floor(index / 13)];
   const wert = KARTEN_WERTE[index % 13];
   return {
@@ -310,27 +310,32 @@ export function leiterBauen({
   sperreMs = SPERRE_MS,
 } = {}) {
   const stufen = leiterStufen(betrag, maxBetrag);
-  if (stufen.length === 0) stufen.push(betrag);          // ungültige Eingabe: wenigstens der Startbetrag bleibt sicher
+  if (stufen.length === 0) stufen.push(betrag); // ungültige Eingabe: wenigstens der Startbetrag bleibt sicher
   const letzte = stufen.length - 1;
   const reduziert = bewegungReduziert();
 
   // ----- Zustand -----
-  let stufe = 0;                       // aktueller Index (0 = Start)
-  let phase = vorschau ? "vorschau" : "wartet";   // "wartet" | "ziehen" | "ende" | "vorschau"
-  let nullLeuchtet = false;            // Blinken: true = die Null leuchtet, false = die nächste Stufe
+  let stufe = 0; // aktueller Index (0 = Start)
+  let phase = vorschau ? "vorschau" : "wartet"; // "wartet" | "ziehen" | "ende" | "vorschau"
+  let nullLeuchtet = false; // Blinken: true = die Null leuchtet, false = die nächste Stufe
   let blinkTimer = 0;
   let endeTimer = 0;
   let fertig = false;
-  let bereitAb = performance.now() + sperreMs;   // riskieren erst ab diesem Zeitpunkt
+  let bereitAb = performance.now() + sperreMs; // riskieren erst ab diesem Zeitpunkt
   let endeAufloesen = () => {};
-  let endeSofort = () => {};           // überspringt die Pause am Ende (Absturz, Gipfel)
-  const ende = new Promise((aufloesen) => { endeAufloesen = aufloesen; });
+  let endeSofort = () => {}; // überspringt die Pause am Ende (Absturz, Gipfel)
+  const ende = new Promise((aufloesen) => {
+    endeAufloesen = aufloesen;
+  });
 
   // ----- Aufbau -----
-  const wurzel = el("div", `rk-leiter${vorschau ? " vorschau" : ""}${reduziert ? " reduziert" : ""}`);
+  const wurzel = el(
+    "div",
+    `rk-leiter${vorschau ? " vorschau" : ""}${reduziert ? " reduziert" : ""}`,
+  );
   const liste = el("ol", "rk-stufen");
   liste.setAttribute("aria-label", "Risikoleiter, oberste Stufe zuerst");
-  const zeilen = [];                   // zeilen[i] = Zeile der Stufe i (0 = Start)
+  const zeilen = []; // zeilen[i] = Zeile der Stufe i (0 = Start)
   // Oben beginnen: Die DOM-Reihenfolge ist die Lese-Reihenfolge (oberste Stufe zuerst).
   for (let i = letzte; i >= 0; i--) {
     const zeile = el("li", "rk-stufe");
@@ -344,7 +349,11 @@ export function leiterBauen({
     liste.append(zeile);
   }
   const nullZeile = el("li", "rk-null");
-  nullZeile.append(el("span", "rk-marke", "✕"), el("span", "rk-faktor", "0"), el("span", "rk-wert", "Absturz"));
+  nullZeile.append(
+    el("span", "rk-marke", "✕"),
+    el("span", "rk-faktor", "0"),
+    el("span", "rk-wert", "Absturz"),
+  );
   nullZeile.children[0].setAttribute("aria-hidden", "true");
   liste.append(nullZeile);
   wurzel.append(liste);
@@ -372,13 +381,16 @@ export function leiterBauen({
     zeilen.forEach((zeile, i) => {
       zeile.classList.toggle("geschafft", i < stufe);
       zeile.classList.toggle("aktuell", i === stufe);
-      zeile.classList.toggle("naechste", i === stufe + 1 && phase === "wartet");   // dauerhafte Markierung (auch ohne Blinken)
+      zeile.classList.toggle("naechste", i === stufe + 1 && phase === "wartet"); // dauerhafte Markierung (auch ohne Blinken)
       zeile.classList.toggle("oben", i === letzte);
       zeile.classList.remove("blink", "getroffen", "neu");
       zeile.children[0].textContent = i < stufe ? "✓" : i === stufe ? "▶" : "";
       if (i === stufe) zeile.setAttribute("aria-current", "step");
       else zeile.removeAttribute("aria-current");
-      zeile.setAttribute("aria-label", `Stufe ${i + 1} von ${stufen.length}: ${zahlText(stufen[i])}`);
+      zeile.setAttribute(
+        "aria-label",
+        `Stufe ${i + 1} von ${stufen.length}: ${zahlText(stufen[i])}`,
+      );
     });
     nullZeile.classList.remove("blink", "getroffen");
     nullZeile.classList.toggle("scharf", phase === "wartet");
@@ -425,7 +437,10 @@ export function leiterBauen({
    * dem Ergebnis landet. Danach eine kurze Atempause.
    */
   function auslaufen(zielNull) {
-    if (reduziert) return new Promise((fertigEr) => { blinkTimer = setTimeout(fertigEr, 250); });
+    if (reduziert)
+      return new Promise((fertigEr) => {
+        blinkTimer = setTimeout(fertigEr, 250);
+      });
     return new Promise((fertigEr) => {
       const anzahl = nullLeuchtet === zielNull ? 4 : 5;
       const pausen = [130, 170, 230, 320, 450].slice(5 - anzahl);
@@ -476,7 +491,7 @@ export function leiterBauen({
   /** RISKIEREN: 50/50 ziehen. Das Ergebnis und der sichere Betrag stehen SOFORT fest, die Animation zeigt es nur an. */
   async function riskieren() {
     if (fertig || phase !== "wartet" || stufe >= letzte) return;
-    if (performance.now() < bereitAb) return;             // Schutz gegen Doppelklick / gedrückte Taste
+    if (performance.now() < bereitAb) return; // Schutz gegen Doppelklick / gedrückte Taste
     phase = "ziehen";
     blinkStoppen();
     knoepfeSchalten(false);
@@ -484,10 +499,10 @@ export function leiterBauen({
     nullZeile.classList.remove("scharf");
 
     const schritt = leiterSchritt(stufen, stufe, zufall);
-    rueckruf(beiAenderung, schritt.betrag);               // ab jetzt gilt dieser Betrag, auch wenn die Seite zugeht
+    rueckruf(beiAenderung, schritt.betrag); // ab jetzt gilt dieser Betrag, auch wenn die Seite zugeht
     infoSetzen("Das Licht läuft aus …");
     await auslaufen(!schritt.gewonnen);
-    if (fertig) return;                                   // zwischendurch zerstört
+    if (fertig) return; // zwischendurch zerstört
 
     if (schritt.gewonnen) {
       stufe = schritt.stufe;
@@ -496,7 +511,7 @@ export function leiterBauen({
       zeilen[stufe].classList.add("getroffen", "neu");
       rueckruf(beiErgebnis, { art: "auf", betrag: schritt.betrag });
       if (schritt.oben) {
-        klingen(klangGewinn, 3);                          // Fanfare ganz oben
+        klingen(klangGewinn, 3); // Fanfare ganz oben
         infoSetzen("Oberste Stufe erreicht! Dein Gewinn wird automatisch gesammelt.");
         endeNachPause({ betrag: schritt.betrag, grund: "oben" }, 1800);
         return;
@@ -523,8 +538,8 @@ export function leiterBauen({
   function taste(e) {
     if (tasteIgnorieren(e)) return;
     if (e.key === " ") {
-      if (tasteAufBedienelement(e)) return;               // dort löst die Leertaste den Knopf selbst aus
-      e.preventDefault();                                 // Seite nicht scrollen
+      if (tasteAufBedienelement(e)) return; // dort löst die Leertaste den Knopf selbst aus
+      e.preventDefault(); // Seite nicht scrollen
       riskieren();
     } else if (e.key === "s" || e.key === "S") {
       sammeln();
@@ -574,15 +589,17 @@ export function kartenBauen({
   sperreMs = SPERRE_MS,
 } = {}) {
   const reduziert = bewegungReduziert();
-  let aktuell = betrag;                // der Betrag, der gerade sicher ist
-  let phase = "wartet";                // "wartet" | "ziehen" | "ende"
+  let aktuell = betrag; // der Betrag, der gerade sicher ist
+  let phase = "wartet"; // "wartet" | "ziehen" | "ende"
   let fertig = false;
   let endeTimer = 0;
   let bereitAb = performance.now() + sperreMs;
   let endeAufloesen = () => {};
   let endeSofort = () => {};
-  const ende = new Promise((aufloesen) => { endeAufloesen = aufloesen; });
-  const verlauf = [];                  // Farben der bisherigen Karten (kleine Punkte)
+  const ende = new Promise((aufloesen) => {
+    endeAufloesen = aufloesen;
+  });
+  const verlauf = []; // Farben der bisherigen Karten (kleine Punkte)
 
   // ----- Aufbau: Szene -> Karte (dreht sich) -> zwei Flächen -----
   const wurzel = el("div", "rk-karten");
@@ -593,7 +610,8 @@ export function kartenBauen({
   const eckeOben = el("div", "rk-ecke oben");
   const eckeUnten = el("div", "rk-ecke unten");
   const mitte = el("div", "rk-mitte");
-  for (const ecke of [eckeOben, eckeUnten]) ecke.append(el("span", "rk-ecke-wert"), el("span", "rk-ecke-symbol"));
+  for (const ecke of [eckeOben, eckeUnten])
+    ecke.append(el("span", "rk-ecke-wert"), el("span", "rk-ecke-symbol"));
   vorne.append(eckeOben, mitte, eckeUnten);
   karte.append(hinten, vorne);
   szene.append(karte);
@@ -626,7 +644,9 @@ export function kartenBauen({
   }
 
   function wartetInfo() {
-    infoSetzen(`Welche Farbe hat die Karte? Richtig: ${zahlText(aktuell * 2)}, falsch: 0 (je 50 %).`);
+    infoSetzen(
+      `Welche Farbe hat die Karte? Richtig: ${zahlText(aktuell * 2)}, falsch: 0 (je 50 %).`,
+    );
   }
 
   /** Karte vorne beschriften (Wert, Symbol, Farbe). Nur textContent. */
@@ -644,7 +664,7 @@ export function kartenBauen({
   function verdecken() {
     karte.classList.add("ohne-uebergang");
     karte.classList.remove("aufgedeckt");
-    void karte.offsetWidth;                                // Reflow: Änderung jetzt festschreiben
+    void karte.offsetWidth; // Reflow: Änderung jetzt festschreiben
     karte.classList.remove("ohne-uebergang");
     szene.classList.remove("richtig", "falsch");
     szene.setAttribute("aria-label", "Verdeckte Karte");
@@ -652,7 +672,9 @@ export function kartenBauen({
 
   /** Wartet `ms` Millisekunden; bei Abbruch (zerstoeren) läuft nichts mehr weiter. */
   function warte(ms) {
-    return new Promise((aufloesen) => { endeTimer = setTimeout(aufloesen, ms); });
+    return new Promise((aufloesen) => {
+      endeTimer = setTimeout(aufloesen, ms);
+    });
   }
 
   function aufraeumen() {
@@ -687,16 +709,16 @@ export function kartenBauen({
   /** Auf eine Farbe tippen: Karte ziehen (Ergebnis steht sofort fest), aufklappen, auswerten. */
   async function tippen(farbe) {
     if (fertig || phase !== "wartet") return;
-    if (performance.now() < bereitAb) return;              // Schutz gegen Doppelklick / gedrückte Taste
+    if (performance.now() < bereitAb) return; // Schutz gegen Doppelklick / gedrückte Taste
     phase = "ziehen";
     knoepfeSchalten(false);
 
     const schritt = kartenSchritt(aktuell, farbe, maxBetrag, zufall);
-    rueckruf(beiAenderung, schritt.betrag);                // ab jetzt gilt dieser Betrag
+    rueckruf(beiAenderung, schritt.betrag); // ab jetzt gilt dieser Betrag
     infoSetzen(`Du tippst auf ${farbe === "rot" ? "ROT" : "SCHWARZ"} …`);
     vorderseiteFuellen(schritt.karte);
     klingen(klangKartenFlip);
-    karte.classList.add("aufgedeckt");                     // der Flip (CSS-Transition); bei reduzierter Bewegung sofort
+    karte.classList.add("aufgedeckt"); // der Flip (CSS-Transition); bei reduzierter Bewegung sofort
     await warte(reduziert ? 250 : 750);
     if (fertig) return;
 
@@ -717,7 +739,9 @@ export function kartenBauen({
     rueckruf(beiErgebnis, { art: "auf", betrag: aktuell });
     if (!schritt.weiter) {
       klingen(klangGewinn, 3);
-      infoSetzen(`${schritt.karte.name}: richtig! Das Limit ist erreicht, dein Gewinn wird automatisch gesammelt.`);
+      infoSetzen(
+        `${schritt.karte.name}: richtig! Das Limit ist erreicht, dein Gewinn wird automatisch gesammelt.`,
+      );
       endeNachPause({ betrag: aktuell, grund: "oben" }, 1800);
       return;
     }
@@ -820,9 +844,18 @@ export async function risikoAnbieten({
   if (!buehne || !risikoMoeglich(betrag, maxBetrag)) return betrag;
   if (aktivesOverlay) aktivesOverlay.abbrechen();
 
-  const stand = { sicher: betrag, wurzel: null };   // teilt den sicheren Betrag mit dem Fehlerfall unten
+  const stand = { sicher: betrag, wurzel: null }; // teilt den sicheren Betrag mit dem Fehlerfall unten
   try {
-    return await overlayLaufen({ buehne, betrag, einsatz, maxBetrag, zufall, timeoutMs, beiAenderung, stand });
+    return await overlayLaufen({
+      buehne,
+      betrag,
+      einsatz,
+      maxBetrag,
+      zufall,
+      timeoutMs,
+      beiAenderung,
+      stand,
+    });
   } catch {
     // Ein Fehler im Anzeige-Code darf nie Geld kosten: Dann wird einfach der sichere Betrag gesammelt.
     aktivesOverlay = null;
@@ -831,15 +864,26 @@ export async function risikoAnbieten({
   }
 }
 
-function overlayLaufen({ buehne, betrag, einsatz, maxBetrag, zufall, timeoutMs, beiAenderung, stand }) {
+function overlayLaufen({
+  buehne,
+  betrag,
+  einsatz,
+  maxBetrag,
+  zufall,
+  timeoutMs,
+  beiAenderung,
+  stand,
+}) {
   const reduziert = bewegungReduziert();
-  let komponente = null;               // die gewählte Leiter oder Karte
+  let komponente = null; // die gewählte Leiter oder Karte
   let beendet = false;
   let abschlussLaeuft = false;
-  let automatisch = false;             // true, wenn das Auto-Sammeln ausgelöst hat
+  let automatisch = false; // true, wenn das Auto-Sammeln ausgelöst hat
   let inaktivTimer = 0;
   let aufloesen = () => {};
-  const ergebnisPromise = new Promise((r) => { aufloesen = r; });
+  const ergebnisPromise = new Promise((r) => {
+    aufloesen = r;
+  });
 
   // ----- Aufbau -----
   const wurzel = el("div", "risiko");
@@ -855,12 +899,16 @@ function overlayLaufen({ buehne, betrag, einsatz, maxBetrag, zufall, timeoutMs, 
   const nettoElement = el("p", "rk-netto");
   const frage = el("p", "rk-frage", "Sammeln oder riskieren?");
   const bereich = el("div", "rk-bereich");
-  const hinweis = el("p", "rk-klein",
-    `Beide Wege: 50 % verdoppeln, 50 % alles verlieren. Ohne Eingabe wird nach ${Math.round(timeoutMs / 1000)} Sekunden automatisch gesammelt.`);
+  const hinweis = el(
+    "p",
+    "rk-klein",
+    `Beide Wege: 50 % verdoppeln, 50 % alles verlieren. Ohne Eingabe wird nach ${Math.round(timeoutMs / 1000)} Sekunden automatisch gesammelt.`,
+  );
 
   function kopfAktualisieren(b) {
     betragElement.textContent = zahlText(b);
-    nettoElement.textContent = einsatz > 0 ? `Einsatz ${zahlText(einsatz)} · Netto ${nettoText(b - einsatz)}` : "";
+    nettoElement.textContent =
+      einsatz > 0 ? `Einsatz ${zahlText(einsatz)} · Netto ${nettoText(b - einsatz)}` : "";
   }
   kopfAktualisieren(betrag);
 
@@ -930,10 +978,13 @@ function overlayLaufen({ buehne, betrag, einsatz, maxBetrag, zufall, timeoutMs, 
     komponente?.zerstoeren();
     if (aktivesOverlay === handle) aktivesOverlay = null;
     wurzel.classList.add("weg");
-    setTimeout(() => {
-      wurzel.remove();
-      aufloesen(endbetrag);
-    }, reduziert ? 0 : FADE_MS);
+    setTimeout(
+      () => {
+        wurzel.remove();
+        aufloesen(endbetrag);
+      },
+      reduziert ? 0 : FADE_MS,
+    );
   }
 
   /** Auswahl durch die Leiter oder die Karte ersetzen. */
@@ -988,7 +1039,7 @@ function overlayLaufen({ buehne, betrag, einsatz, maxBetrag, zufall, timeoutMs, 
   const handle = { abbrechen: () => beenden(stand.sicher) };
   aktivesOverlay = handle;
   buehne.append(wurzel);
-  sammelnKnopf.focus({ preventScroll: true });             // sicherste Voreinstellung: Enter/Leertaste sammelt
+  sammelnKnopf.focus({ preventScroll: true }); // sicherste Voreinstellung: Enter/Leertaste sammelt
   fenster.scrollIntoView?.({ block: "nearest", behavior: reduziert ? "auto" : "smooth" });
   aktivitaet();
   return ergebnisPromise;
