@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07070f">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./assets/style.css">
+  <!-- spielspezifische Styles (Anzeige, Start-Zeile, Lernbox-Tabelle) – die Leiter selbst steckt im Abschnitt "Risiko" von ../assets/style.css -->
+  <link rel="stylesheet" href="./spiel.css">
+  <title>Risikoleiter · Browser-Arcade</title>
+  <meta name="description" content="Risikoleiter mit Spielgeld: Steige Stufe für Stufe auf und entscheide jedes Mal, ob du sammelst oder riskierst. Jeder Schritt ist exakt 50 zu 50. Lerne, warum das fair ist und trotzdem fast alle verlieren. Ohne Konto und Cookies.">
+</head>
+<body style="--ak:var(--gold)">
+  <div class="raster" aria-hidden="true"></div>
+  <a class="skip-link" href="#main">Zum Inhalt springen</a>
+  <header class="kopf"><nav class="container nav" aria-label="Hauptnavigation">
+    <a class="marke" href="./"><span class="logo">▶</span>GAMES</a>
+    <div class="nav-links"><a href="./impressum.html">Impressum</a><a href="./datenschutz.html">Datenschutz</a></div>
+  </nav></header>
+  <main id="main" class="container">
+    <div class="spiel-kopf"><div><h1>RISIKOLEITER</h1><p class="unterzeile">Eine Stufe höher oder alles weg? Dein Einsatz steigt mit jedem Wagnis, aber jeder Schritt ist nur eine Münze.</p><p class="alters-hinweis">Simuliertes Glücksspiel mit Spielgeld · ab 16</p></div></div>
+
+    <!-- HUD: Wallet-Leiste (von wallet.js gefüllt) + Feld für die letzte Runde.
+         #wallet-hud hat display:contents (siehe spiel.css), damit seine drei Felder
+         direkt in der .hud-Flexbox mitlaufen. -->
+    <div class="hud">
+      <div id="wallet-hud"></div>
+      <div class="hud-feld"><div class="label">Letzte Runde</div><div class="wert" id="hud-letzter">–</div></div>
+    </div>
+
+    <div class="buehne" id="buehne">
+      <div class="rl-layout">
+        <!-- Links: der aktuelle Betrag und die Meldung. Rechts: die Leiter (game.js baut sie mit risiko.js). -->
+        <div class="rl-anzeige">
+          <p class="rl-label">Aktueller Betrag</p>
+          <p class="rl-betrag" id="rl-betrag">–</p>
+          <p class="rl-netto" id="rl-netto"></p>
+          <div class="gewinn-anzeige" id="gewinn" aria-live="polite"></div>
+          <p class="meldung" id="meldung" data-art="neutral" role="status">Wähle einen Einsatz und steige auf.</p>
+        </div>
+        <div class="rl-leiter" id="leiter-halter"></div>
+      </div>
+
+      <div class="chips chips-mitte" id="chips" role="group" aria-label="Einsatz wählen">
+        <button type="button" class="chip" data-wert="10" aria-pressed="false">10</button>
+        <button type="button" class="chip" data-wert="25" aria-pressed="false">25</button>
+        <button type="button" class="chip" data-wert="50" aria-pressed="true">50</button>
+        <button type="button" class="chip" data-wert="100" aria-pressed="false">100</button>
+      </div>
+      <div class="start-zeile"><button class="knopf primaer start-knopf" id="start" type="button">AUFSTEIGEN</button></div>
+    </div>
+
+    <p class="steuerung">Steuerung: <kbd>Leertaste</kbd> steigt auf (vor dem Start) und riskiert (auf der Leiter), <kbd>S</kbd> sammelt, <kbd>1</kbd> bis <kbd>4</kbd> wählen den Einsatz (10 / 25 / 50 / 100). Am Handy einfach die Knöpfe antippen. Den Ton schaltest du oben rechts um.</p>
+
+    <div class="hinweis hinweis-casino"><strong>Nur Spielgeld</strong> – kein Echtgeld, keine Kaufmöglichkeit. Das Konto teilen sich alle Casino-Spiele dieser Seite und liegt nur in deinem Browser.</div>
+
+    <section class="top-bereich"><h2>Lokale Top 3 · Größte Gewinne</h2>
+      <p class="klein">Der höchste Netto-Gewinn einer einzelnen Runde (Endbetrag minus Einsatz). Ein Platz wird still eingetragen, ohne Dialog.</p>
+      <div id="topliste"></div>
+      <button class="knopf" id="reset" type="button">Topliste zurücksetzen</button>
+    </section>
+
+    <section class="lernbox"><details open><summary>Anleitung &amp; Regeln</summary>
+      <p><strong>Ziel:</strong> Steige so hoch wie du dich traust und sammle zur rechten Zeit.</p>
+      <ul>
+        <li>Wähle einen Einsatz (10, 25, 50 oder 100) und drücke AUFSTEIGEN. Der Einsatz wird sofort abgebucht und ist die unterste Stufe der Leiter (×1).</li>
+        <li>Die Leiter hat sechs Stufen: ×1, ×2, ×4, ×8, ×16 und ×32 deines Einsatzes. Bei 50 Einsatz sind das 50, 100, 200, 400, 800 und 1.600.</li>
+        <li><strong>RISIKIEREN:</strong> Die nächste Stufe und die „0“ blinken im Wechsel. Mit dem Knopf (oder der Leertaste) bleibt das Licht stehen. Leuchtet die Stufe, steigst du eine Sprosse höher. Leuchtet die Null, stürzt du ab und verlierst alles. Beides ist exakt gleich wahrscheinlich: 50 zu 50.</li>
+        <li><strong>SAMMELN:</strong> Du nimmst den Betrag deiner aktuellen Stufe mit aufs Konto, jederzeit zwischen zwei Wagnissen (Taste <kbd>S</kbd>). Auf der untersten Stufe bekommst du nur deinen Einsatz zurück.</li>
+        <li>Ganz oben (×32) wird automatisch gesammelt, mit Fanfare. Höher geht es nicht.</li>
+        <li>Verlässt du die Seite mitten in der Runde, bleibt der aktuell sichere Betrag auf deinem Konto: ein gewonnener Schritt bleibt gewonnen, ein Absturz bleibt ein Absturz.</li>
+        <li>Die Top 3 zeigt deinen höchsten Netto-Gewinn einer Runde. Ist dein Spielgeld unter 10 gerutscht, gibt es neues Startgeld.</li>
+      </ul>
+    </details></section>
+
+    <section class="lernbox"><details><summary>Warum die Leiter fair ist und trotzdem fast alle verlieren</summary>
+      <p><strong>Jeder einzelne Schritt ist fair.</strong> Mit 50 % verdoppelst du deinen Betrag B, mit 50 % bekommst du 0. Der Erwartungswert ist die Summe aus Wahrscheinlichkeit mal Ergebnis: <code>0,5 × 2B + 0,5 × 0 = B</code>. Im Durchschnitt bekommst du also genau das, was du eingesetzt hast. Es gibt keinen Hausvorteil. (Die Slots und das Coinflip-Casino haben einen Hausvorteil, die Leiter hat keinen.)</p>
+      <p><strong>Das gilt für jede Strategie.</strong> Wer bis Stufe n klettern will, schafft das mit <code>0,5<sup>n</sup></code> und bekommt dann <code>2<sup>n</sup></code> mal den Einsatz. Das Produkt ist wieder genau 1. Egal, ob du nach einer Stufe oder erst ganz oben sammelst oder nach Gefühl mal hier und mal dort: Der Erwartungswert bleibt der Einsatz. Kein Plan, keine Taktik und kein Bauchgefühl ändern daran etwas.</p>
+      <div class="tabelle-halter"><table class="tabelle" aria-label="Chancen, Erwartungswert und Streuung je Ziel">
+        <thead><tr><th scope="col">Dein Plan</th><th scope="col">Du schaffst es</th><th scope="col">Du verlierst alles</th><th scope="col">Erwartungswert</th><th scope="col">Streuung</th></tr></thead>
+        <tbody id="leiter-tabelle"></tbody>
+      </table></div>
+      <p><strong>Warum verlieren trotzdem fast alle?</strong> Der Erwartungswert ist ein Durchschnitt über sehr viele Runden. In der einzelnen Runde bekommst du nie den Durchschnitt, sondern immer ein Extrem: entweder 0 oder ein Vielfaches. Wer bis ganz oben will, endet in 31 von 32 Fällen bei 0 (96,9 %) und im 32. Fall bei ×32. Dass die wenigen Gewinner so viel einsammeln, bezahlt jeder einzelne Verlierer. Der Durchschnitt stimmt, aber der typische Fall ist der Absturz.</p>
+      <p><strong>Erwartungswert und Varianz sind zwei verschiedene Dinge.</strong> Der Erwartungswert sagt, wo der Durchschnitt liegt (hier: beim Einsatz). Die Varianz, genauer ihre Wurzel, die Standardabweichung, sagt, wie stark die einzelnen Ergebnisse darum streuen. Sammelst du sofort, ist die Streuung 0: Du bekommst sicher deinen Einsatz. Willst du bis ×32, beträgt sie rund 5,6 Einsätze, bei gleichem Erwartungswert. Mit jeder Stufe wird aus einer sicheren Sache mehr und mehr eine Lotterie. Die Rechnung: Ein Plan zahlt mit Wahrscheinlichkeit p den Betrag W und sonst 0. Seine Streuung ist <code>W × √(p × (1 − p))</code>.</p>
+      <p><strong>Probier es selbst:</strong> Die Simulation lässt 10.000 Aufsteiger gegen die echte Leiter-Ziehung antreten. Alle haben dasselbe Ziel.</p>
+      <div class="sim">
+        <div class="sim-zeile">
+          <label for="sim-ziel">Alle wollen bis</label>
+          <select id="sim-ziel"></select>
+          <button class="knopf" id="sim-start" type="button">10.000 Runden simulieren</button>
+        </div>
+        <p class="sim-ergebnis" id="sim-ergebnis" aria-live="polite">Wähle ein Ziel und starte die Simulation. Der Durchschnitt landet immer bei etwa 1 × Einsatz, aber die meisten gehen leer aus.</p>
+      </div>
+      <p><strong>Warum fühlt es sich trotzdem lohnend an?</strong> Jede einzelne Entscheidung sieht harmlos aus („nur eine Münze, 50 zu 50“). Dass die Stufen sich vervielfachen, merkt man erst, wenn man sie hintereinander betrachtet. Dazu kommt: Man hat schon so viel „erspielt“, da will man den Gewinn nicht liegen lassen („noch eine Stufe, dann ist es ein richtig großer Gewinn“). Diese Fehlschlüsse sind der Grund, warum Risikoleitern in Spielhallen so beliebt sind. Echte Geräte sind dabei oft nicht einmal fair: Bei manchen liegt die Gewinnchance im Risiko-Modus unter 50 %, je nach Gerät und Regelwerk. Diese Seite ist exakt 50 zu 50 und damit ehrlicher als manch echter Automat.</p>
+      <p><strong>Und bei den Slots?</strong> Auch dort gibt es nach einem Gewinn die Wahl „Sammeln, Leiter oder Rot/Schwarz“. Weil jeder Schritt exakt 50 zu 50 ist, ändert das Risiko-Feature die Auszahlungsquote der Slots nicht: Es macht sie nur schwankungsstärker.</p>
+    </details></section>
+
+    <section class="lernbox"><details><summary>Wie funktioniert der Code?</summary>
+      <p><strong>Die Stufen.</strong> <code>leiterStufen(betrag, maxBetrag)</code> in <code>assets/risiko.js</code> multipliziert den Einsatz mit 1, 2, 4, 8, 16 und 32 und hört auf, sobald eine Stufe das Limit überschreiten würde. Hier ist das Limit <code>einsatz × 32</code>, es passen also alle sechs. Dieselbe Funktion liefert in den Slots die Leiter für einen Gewinn, dort mit dem Limit 5.000.</p>
+      <p><strong>Der Zufall.</strong> <code>risikoZiehen()</code> holt EINE Zufallszahl <code>z</code> aus <code>Math.random()</code> (von 0 inklusive bis 1 exklusive) und liefert <code>z &lt; 0.5</code>. Genau die untere Hälfte des Bereichs ist „gewonnen“: Die Chance ist exakt 0,5. Der Zufall ist als Parameter austauschbar, so lassen sich in Node-Tests Ergebnisse erzwingen und die Verteilung über Hunderttausende Ziehungen prüfen.</p>
+      <p><strong>Eine Komponente, zwei Verwendungen.</strong> <code>leiterBauen()</code> baut die Leiter samt Knöpfen und Tastatur und liefert ein Element plus ein Promise <code>ende</code>. Dieses Spiel hängt das Element in die Seite und bucht, wenn das Promise erfüllt ist. Die Slots hängen es in ein Overlay. Der Code der Leiter steht nur einmal da.</p>
+      <p><strong>Das Blinken.</strong> Ein <code>setInterval</code> schaltet alle 230 Millisekunden die CSS-Klasse <code>blink</code> abwechselnd auf die nächste Stufe und auf die Null. Beim Druck auf RISKIEREN steht das Ergebnis schon fest. Das Licht „läuft nur aus“: vier oder fünf weitere Wechsel mit wachsenden Pausen, passend gewählt, sodass es auf dem Ergebnis stehen bleibt. Wie bei den Slots gilt: Erst entscheiden, dann animieren. Bei „Bewegung reduzieren“ blinkt nichts, die nächste Stufe und die Null sind stattdessen dauerhaft gestrichelt markiert.</p>
+      <p><strong>Der Weg des Geldes.</strong> <code>einsatzAbbuchen()</code> zieht den Einsatz beim Aufsteigen ab. Das Modul meldet nach jeder Ziehung sofort über <code>beiAenderung(sicherBetrag)</code>, wie viel gerade sicher ist (der neue Stufenwert oder 0). Am Ende steht <code>rundeAbschliessen(einsatz, endbetrag)</code>. Ein <code>pagehide</code>-Ereignis bucht denselben sicheren Betrag, falls die Seite vorher geschlossen wird. Geld läuft ausschließlich über <code>wallet.js</code>.</p>
+      <p><strong>Testbar durch reine Funktionen.</strong> <code>leiterStufen()</code>, <code>risikoZiehen()</code>, <code>leiterSchritt()</code>, <code>leiterTabelle()</code> und <code>simulieren()</code> kennen weder DOM noch Speicher. Die Tabelle oben und die Simulation berechnen sich aus denselben Funktionen wie das Spiel, deshalb können Text und Spiel nie auseinanderlaufen.</p>
+    </details></section>
+  </main>
+  <footer class="fuss"><div class="container fuss-in"><span>Browser-Arcade · Open Source</span><nav aria-label="Rechtliches"><a href="./impressum.html">Impressum</a><a href="./datenschutz.html">Datenschutz</a></nav></div></footer>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>

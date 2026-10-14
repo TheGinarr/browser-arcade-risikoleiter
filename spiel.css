@@ -1,0 +1,41 @@
+/* ============================================================
+   Risikoleiter · spiel.css — nur die seitenspezifischen Styles.
+   Die Leiter selbst (.rk-leiter usw.) kommt aus dem gemeinsamen
+   Risiko-Abschnitt in ../assets/style.css.
+   ============================================================ */
+
+/* Zweispaltiges Layout: links Leiter, rechts Anzeige/Steuerung.
+   Auf schmalen Screens untereinander. */
+.rl-layout{display:flex;gap:28px;align-items:stretch;justify-content:center;flex-wrap:wrap;padding:8px 0}
+.rl-leiter{flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:180px}
+.rl-anzeige{
+  flex:1 1 260px;max-width:420px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;text-align:center;
+}
+
+/* Großer aktueller Betrag + Netto-Zeile darunter */
+.rl-label{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.rl-betrag{
+  font-family:var(--pixel);font-size:clamp(1.4rem,5vw,2.2rem);color:var(--ak);
+  text-shadow:0 0 18px color-mix(in srgb,var(--ak) 55%,transparent);
+}
+.rl-netto{font-family:var(--mono);color:var(--mut)}
+.rl-netto.plus{color:var(--lime)}
+.rl-netto.minus{color:var(--pink)}
+
+/* Einsatz-Chips mittig, Start-Knopf prominent */
+.chips-mitte{justify-content:center}
+.start-knopf{min-width:200px;font-family:var(--pixel);font-size:.85rem;padding:14px 22px}
+
+/* Status-Meldung unter der Anzeige */
+.meldung{min-height:1.5em;color:var(--mut)}
+.meldung.betont{color:var(--ak);font-weight:600}
+
+/* Mini-Simulation in der Lernbox (Erwartungswert-Demo) */
+.sim{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.sim-ergebnis{font-family:var(--mono);color:var(--txt)}
+
+@media (max-width:560px){
+  .rl-layout{gap:16px}
+  .rl-anzeige{min-width:100%}
+}
